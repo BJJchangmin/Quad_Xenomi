@@ -30,7 +30,7 @@ private:
   Vector4d RW_th_velDgain;
   Vector4d RW_th_velD_cutoff;
 
-  Vector2d PID_output;
+  Vector2d PID_output[2];
   double cutoff_freq = 150; 
 
   // Using in Function
@@ -39,6 +39,12 @@ private:
   double D_term[2][2];
   double kp; double ki; double kd;
 
+
+  // DOB
+  Vector2d rhs_dob;
+  Vector2d lhs_dob;
+  Vector2d T_dob[2]; // old값 setting 할려고 두개로 만듬
+  Matrix2d tauDist_hat[2]; // old값 초기화 해줘야함
 
 public:
   Controller();
@@ -49,7 +55,9 @@ public:
 
   // feedback control //;
   double pid(Vector2d posRW_err, Vector2d posRW_err_old, int r0th1, int Leg_num, int mode); // idx:  r(=0), th(=1)중 어떤 state의 PD control?
-  Vector2d velPID();                                                                 // Leg_num: FL-0 FR-1 RL-2 RR-3
+  Vector2d velPID();
+  Vector2d DOBRW(Vector2d PID_Torque,Matrix2d Lamda_nominal_DOB,double acc_m,double acc_b ,double cut_off ,int flag);//flag 대신 of/off
+                                                             
 
   double get_posPgain(int Leg_num, int r0th1);
   double get_posIgain(int Leg_num, int r0th1);

@@ -30,8 +30,6 @@ void Actuator::DATA_Receive(input_GTWI_t** in_twitter_GTWI) //Motor_num은 class
     position_raw = in_twitter_GTWI[Motor_Num]->TXPDO_ACTUAL_POSITION_DATA;
     velocity_raw = in_twitter_GTWI[Motor_Num]->TXPDO_ACTUAL_VELOCITY_DATA;
     torque_raw = in_twitter_GTWI[Motor_Num]->TXPDO_ACTUAL_TORQUE_DATA;
-    //            Ain1_raw[i] = in_twitter_GTWI[i]->TXPDO_ANALOG_INPUT_1_DATA;
-    //            DCvolt_raw[i] = in_twitter_GTWI[i]->TXPDO_DC_LINK_CIRCUIT_VOLTAGE_DATA;
     Din_raw = in_twitter_GTWI[Motor_Num]->TXPDO_DIGITAL_INPUTS_DATA;
     statusword = in_twitter_GTWI[Motor_Num]->TXPDO_STATUSWORD_DATA;
     modeofOP_disp = in_twitter_GTWI[Motor_Num]->TXPDO_MODE_OF_OPERATION_DISPLAY_DATA;
@@ -52,7 +50,7 @@ void Actuator::DATA_Receive(input_GTWI_t** in_twitter_GTWI) //Motor_num은 class
 void Actuator::DATA_Send(output_GTWI_t** out_twitter_GTWI) //
 {
 
-#ifdef SLAVE_GTWI
+#ifdef SLAVE_GTWI // 조건부 컴파일. SLAVE_GTWI가 define 되어있으면 아래 코드가 실행됨.
     // Have to check what the multipling factors are.
     out_twitter_GTWI[Motor_Num]->RXPDO_TARGET_POSITION_DATA = (int32)(target_position * (Enc_resolution / (2 * M_PI)));
     out_twitter_GTWI[Motor_Num]->RXPDO_TARGET_POSITION_DATA_0 = (int32)(target_position * (Enc_resolution / (2 * M_PI)));
@@ -74,10 +72,12 @@ void Actuator::DATA_unit_change() {
   if(Motor_Num == 2||Motor_Num == 10||Motor_Num == 11)
   {
     Motor_pos = -(double)(position_raw / Enc_resolution * 2 * M_PI) /100;
+    Motor_vel = -(double)(velocity_raw / Enc_resolution * 2 * M_PI) /100;
   }
   else
   {
     Motor_pos = (double)(position_raw / Enc_resolution * 2 * M_PI) /100;
+    Motor_vel = (double)(velocity_raw / Enc_resolution * 2 * M_PI) /100;
   } 
 
     if(Enc_init == true)
@@ -87,13 +87,13 @@ void Actuator::DATA_unit_change() {
 
     Motor_pos = Motor_pos - Motor_pos_offset;
   
-    Motor_vel = (double)(velocity_raw / Enc_resolution * 2 * M_PI) /100;
+    // Motor_vel = (double)(velocity_raw / Enc_resolution * 2 * M_PI) /100;
     Motor_torque = (double)((double)torque_raw) * 45000 / 1000000;    
         
 }
 
 void Actuator::exchange_mutex() {
-    if (!pthread_mutex_trylock(&data_mut)) {
+    if (!pthread_mutex_trylock(&data_mut)) { // 뮤텍스 variable을 의도적으로 lock하려고 할 때 사용
 
     controlword = _M_CONTROLWORD[Motor_Num];
     modeOP = _M_MODE_OF_OPERATION[Motor_Num];

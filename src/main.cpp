@@ -161,10 +161,10 @@ Vector2d RL_output;
 Vector2d RR_output;
 
 // motor control input
-Vector2d FL_control_input;
-Vector2d FR_control_input;
-Vector2d RL_control_input;
-Vector2d RR_control_input;
+Vector2d FL_PID_output;
+Vector2d FR_PID_output;
+Vector2d RL_PID_output;
+Vector2d RR_PID_output;
 
 
 
@@ -657,13 +657,16 @@ static void *realtime_thread(void *arg)
         
         /****************** Put the torque in Motor ******************/
         
-        FL_control_input = JTrans_FL * FL_output;
-        FR_control_input = JTrans_FR * FR_output;
-        RL_control_input = JTrans_RL * RL_output;
-        RR_control_input = JTrans_RR * RR_output;
+        FL_PID_output = JTrans_FL * FL_output;
+        FR_PID_output = JTrans_FR * FR_output;
+        RL_PID_output = JTrans_RL * RL_output;
+        RR_PID_output = JTrans_RR * RR_output;
 
-
-
+        // 나중에 이름 고치기.
+        FL_PID_output = FL_PID_output + C_FL.DOBRW(FL_PID_output, K_FL.get_Lamda_nominal_DOB(), ACT_FLHIP.getMotor_acc(), ACT_FLKNEE.getMotor_acc(), 150, 1);
+        FR_PID_output = FR_PID_output + C_FR.DOBRW(FR_PID_output, K_FR.get_Lamda_nominal_DOB(), ACT_FRHIP.getMotor_acc(), ACT_FRKNEE.getMotor_acc(), 150, 1);
+        RL_PID_output = RL_PID_output + C_RL.DOBRW(RL_PID_output, K_RL.get_Lamda_nominal_DOB(), ACT_RLHIP.getMotor_acc(), ACT_RLKNEE.getMotor_acc(), 150, 1);
+        RR_PID_output = RR_PID_output + C_RR.DOBRW(RR_PID_output, K_RR.get_Lamda_nominal_DOB(), ACT_RRHIP.getMotor_acc(), ACT_RRKNEE.getMotor_acc(), 150, 1);
 
         /****************** Mutex exchange ******************/
         C_FL.Mutex_exchange();

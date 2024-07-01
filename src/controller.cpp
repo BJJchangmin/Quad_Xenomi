@@ -142,4 +142,32 @@ double Controller::get_velD_cutoff(int Leg_num, int r0th1) {
   else
     return RW_th_velD_cutoff[Leg_num];
 };
+
+Vector2d controller::DOBRW(Vector2d PID_Torque,Matrix2d Lamda_nominal_DOB,double acc_m,double acc_b ,double cut_off ,int flag)
+{
+    cut_off_dob = cut_off;
+    Vector2d qddot;
+    PID_output[0]= PID_Torque;
+    double time_const = 1 / (2 * pi * cutoff_freq);
+    qddot[0] = acc_m;
+    qddot[1] = acc_b;
+
+    lhs_dob = PID_output[1];
+    PID_output[1] = PID_output[0];
+    rhs_dob = Lamda_nominal_DOB * qddot;
+    T_dob = lhs_dob - rhs_dob;
+
+    if (flag == true)
+    {
+      tauDist_hat[0] = (2 * (T_dob[0] + T_dob[1]) - (Ts - 2 * time_const) * tauDist_hat[1]) / (Ts + 2 * time_const);
+    }
+    else
+    {
+      tauDist_hat[0] = 0;
+    }
+    
+    tauDist_hat[1] = tauDist_hat[0];
+    return tauDist_hat[0];
+
+}; // Rotating Workspace DOB
   

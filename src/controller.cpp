@@ -149,9 +149,8 @@ Vector2d controller::DOBRW(Vector2d DOB_output ,Matrix2d Lamda_nominal_DOB,doubl
     // old 값 initial 0으로 해줘야함
     // UI에 넣어야할 내용은 cut_off, flag
 
-    DOBinitial();
-    double time_const = 1 / (2 * pi * cut_off);
-    double Ts = 0.001;  
+
+    double time_const = 1 / (2 * pi * cut_off); 
 
     // 정의는 여기서
     Vector2d result;
@@ -205,10 +204,9 @@ void controller::FOBRW(Vector2d DOB_output,Matrix2d Lamda_nominal_FOB,Matrix2d J
     // old 값 initial 0으로 해줘야함
     // UI에 넣어야할 내용은 cut_off, flag
     // Jacobian도 가져와야함
-    FOBinitial();
+    
     
     double time_const = 1 / (2 * pi * cut_off);
-    double Ts = 0.001;  
 
     // 정의는 여기서
     Vector2d result;
@@ -231,7 +229,8 @@ void controller::FOBRW(Vector2d DOB_output,Matrix2d Lamda_nominal_FOB,Matrix2d J
       tauExt_hat[0] = 0;
     }
 
-    forceExt_hat[0] = JacobianTrans * tauExt_hat[0];
+    result = JacobianTrans * tauExt_hat[0];
+    forceExt_hat[0] = result[0]; // r direction
     
     //old값 update
     T_fob[1] = T_fob[0];
@@ -242,6 +241,26 @@ void controller::FOBRW(Vector2d DOB_output,Matrix2d Lamda_nominal_FOB,Matrix2d J
 
 }; // Rotating Workspace DOB
 
+double controller::admittance(double omega_n, double zeta, double k)
+{
+  // admittance control
+  // admittance control은 현재 사용하지 않음
+  // 현재 omega_n, zeta, k 로 tunning 하고 있는데, 변환식을 통해 아래에 적어주면 된다
+    double ad_M = k/(pow(omega_n,2));
+    double ad_B = 2*zeta*k/omega_n;
+    double ad_K = k;
+
+    double c1 = 4 * ad_M + 2 * ad_B * Ts + ad_K * pow(Ts, 2);
+    double c2 = -8 * ad_M + 2 * ad_K * pow(Ts, 2);
+    double c3 = 4 * ad_M - 2 * ad_B * Ts + ad_K * pow(Ts, 2);
+   
+   deltaPos[0] =
+        (pow(Ts, 2) * forceExt_hat[0] + 2 * pow(Ts, 2) * forceExt_hat[1] +
+            pow(Ts, 2) * forceExt_hat[2] - c2 * deltaPos[1] - c3 * deltaPos[2]) / c1;
+
+
+  return deltaPos[0];
+}
 
 
 /*-----------------------Initial function-------------------------*/
@@ -260,4 +279,10 @@ void controller::FOBinitial()
   tauExt_hat[1] = 0;
   forceExt_hat[1] = 0;
   forceExt_hat[2] = 0;
+}
+
+void controller::init()
+{
+  DOBinitial();
+  FOBinitial();
 }

@@ -10,6 +10,8 @@ class Controller
 {
 private:
   // PID //
+  double Ts = 0.0001;
+
   Vector4d RW_r_posPgain; // FL FR RL RR leg
   Vector4d RW_r_posIgain;
   Vector4d RW_r_posDgain;
@@ -49,7 +51,10 @@ private:
   Vector2d lhs_fob;
   Vector2d T_fob; // old값 setting 할려고 두개로 만듬
   Vector2d tauExt_hat[2]; // old값 초기화 해줘야함
-  Vector2d forceExt_hat[3]; // old값 초기화 해줘야함
+  double forceExt_hat[3]; // old값 초기화 해줘야함
+
+  // admittance
+  double deltaPos[3];
 
 public:
   Controller();
@@ -70,7 +75,10 @@ public:
   void FOBRW(Vector2d DOB_output,Matrix2d Lamda_nominal_FOB,Matrix2d JacobianTrans,double acc_m,double acc_b ,double cut_off ,int flag);//flag 대신 of/off                                                       
   void FOBinitial();
 
-  
+  // admittance
+  double admittance(double omega_n, double zeta, double k);
+
+  void init();
 
   double get_posPgain(int Leg_num, int r0th1);
   double get_posIgain(int Leg_num, int r0th1);

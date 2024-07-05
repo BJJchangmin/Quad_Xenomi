@@ -632,10 +632,10 @@ static void *realtime_thread(void *arg)
           
         /****************** State ******************/ // pos RW
         
-        posRW_FL = K_FL.get_posRW(); // function의 마지막 input이 0이면 현재 값, 1이면 이전 값
-        posRW_FR = K_FR.get_posRW();
-        posRW_RL = K_RL.get_posRW();
-        posRW_RR = K_RR.get_posRW();
+        posRW_FL = K_FL.get_posRW() + C_FL.admittance(30,1,5000); // function의 마지막 input이 0이면 현재 값, 1이면 이전 값
+        posRW_FR = K_FR.get_posRW() + C_FR.admittance(30,1,5000);
+        posRW_RL = K_RL.get_posRW() + C_RL.admittance(30,1,5000);
+        posRW_RR = K_RR.get_posRW() + C_RR.admittance(30,1,5000);
         
 //        velRW_FL = K_FL.get_velRW();
         
@@ -699,7 +699,7 @@ static void *realtime_thread(void *arg)
         C_FR.FOBRW(FR_DOB_output, K_FR.get_Lamda_nominal_FOB(),K_FR.get_RW_Jacobian_Trans() ,ACT_FRHIP.getMotor_acc(), ACT_FRKNEE.getMotor_acc(), 150, 1);
         C_RL.FOBRW(RL_DOB_output, K_RL.get_Lamda_nominal_FOB(),K_RL.get_RW_Jacobian_Trans() ,ACT_RLHIP.getMotor_acc(), ACT_RLKNEE.getMotor_acc(), 150, 1);
         C_RR.FOBRW(RR_DOB_output, K_RR.get_Lamda_nominal_FOB(),K_RR.get_RW_Jacobian_Trans() ,ACT_RRHIP.getMotor_acc(), ACT_RRKNEE.getMotor_acc(), 150, 1);
-        
+
         /****************** Mutex exchange ******************/
         C_FL.Mutex_exchange();
         C_FR.Mutex_exchange();

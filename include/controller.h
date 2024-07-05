@@ -45,6 +45,12 @@ private:
   Matrix2d T_dob; // old값 setting 할려고 두개로 만듬
   Matrix2d tauDist_hat; // old값 초기화 해줘야함
 
+  Vector2d rhs_fob;
+  Vector2d lhs_fob;
+  Vector2d T_fob; // old값 setting 할려고 두개로 만듬
+  Vector2d tauExt_hat[2]; // old값 초기화 해줘야함
+  Vector2d forceExt_hat[3]; // old값 초기화 해줘야함
+
 public:
   Controller();
 
@@ -55,8 +61,16 @@ public:
   // feedback control //;
   double pid(Vector2d posRW_err, Vector2d posRW_err_old, int r0th1, int Leg_num, int mode); // idx:  r(=0), th(=1)중 어떤 state의 PD control?
   Vector2d velPID();
-  Vector2d DOBRW(Vector2d PID_Torque,Matrix2d Lamda_nominal_DOB,double acc_m,double acc_b ,double cut_off ,int flag);//flag 대신 of/off
-  void DOBinitial();                                                       
+  
+  // DOB
+  Vector2d DOBRW(Vector2d DOB_output,Matrix2d Lamda_nominal_DOB,double acc_m,double acc_b ,double cut_off ,int flag);//flag 대신 of/off
+  void DOBinitial();
+
+  // FOB
+  void FOBRW(Vector2d DOB_output,Matrix2d Lamda_nominal_FOB,Matrix2d JacobianTrans,double acc_m,double acc_b ,double cut_off ,int flag);//flag 대신 of/off                                                       
+  void FOBinitial();
+
+  
 
   double get_posPgain(int Leg_num, int r0th1);
   double get_posIgain(int Leg_num, int r0th1);

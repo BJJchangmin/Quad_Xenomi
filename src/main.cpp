@@ -508,7 +508,7 @@ static void *realtime_thread(void *arg)
 
 ///////////////////////////////////////* REALTIME LOOP */////////////////////////////////////
     initialize();
-    
+
     while(!sigRTthreadKill)
     {
     // 11-1
@@ -690,11 +690,16 @@ static void *realtime_thread(void *arg)
         RR_PID_output = JTrans_RR * RR_output;
 
         // 나중에 이름 고치기. FL_DOT_output 초기값 setting 해줘야함
-        FL_DOB_output = FL_PID_output + C_FL.DOBRW(FL_DOB_output, K_FL.get_Lamda_nominal_DOB(), ACT_FLHIP.getMotor_acc(), ACT_FLKNEE.getMotor_acc(), 150, 1);
+        FL_DOB_output = FL_PID_output + C_FL.DOBRW(FL_DOB_output, K_FL.get_Lamda_nominal_DOB(),ACT_FLHIP.getMotor_acc(), ACT_FLKNEE.getMotor_acc(), 150, 1);
         FR_DOB_output = FR_PID_output + C_FR.DOBRW(FR_DOB_output, K_FR.get_Lamda_nominal_DOB(), ACT_FRHIP.getMotor_acc(), ACT_FRKNEE.getMotor_acc(), 150, 1);
         RL_DOB_output = RL_PID_output + C_RL.DOBRW(RL_DOB_output, K_RL.get_Lamda_nominal_DOB(), ACT_RLHIP.getMotor_acc(), ACT_RLKNEE.getMotor_acc(), 150, 1);
         RR_DOB_output = RR_PID_output + C_RR.DOBRW(RR_DOB_output, K_RR.get_Lamda_nominal_DOB(), ACT_RRHIP.getMotor_acc(), ACT_RRKNEE.getMotor_acc(), 150, 1);
 
+        C_FL.FOBRW(FL_DOB_output, K_FL.get_Lamda_nominal_FOB(),K_FL.get_RW_Jacobian_Trans() ,ACT_FLHIP.getMotor_acc(), ACT_FLKNEE.getMotor_acc(), 150, 1);
+        C_FR.FOBRW(FR_DOB_output, K_FR.get_Lamda_nominal_FOB(),K_FR.get_RW_Jacobian_Trans() ,ACT_FRHIP.getMotor_acc(), ACT_FRKNEE.getMotor_acc(), 150, 1);
+        C_RL.FOBRW(RL_DOB_output, K_RL.get_Lamda_nominal_FOB(),K_RL.get_RW_Jacobian_Trans() ,ACT_RLHIP.getMotor_acc(), ACT_RLKNEE.getMotor_acc(), 150, 1);
+        C_RR.FOBRW(RR_DOB_output, K_RR.get_Lamda_nominal_FOB(),K_RR.get_RW_Jacobian_Trans() ,ACT_RRHIP.getMotor_acc(), ACT_RRKNEE.getMotor_acc(), 150, 1);
+        
         /****************** Mutex exchange ******************/
         C_FL.Mutex_exchange();
         C_FR.Mutex_exchange();

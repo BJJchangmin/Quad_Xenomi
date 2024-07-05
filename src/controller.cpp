@@ -147,6 +147,8 @@ Vector2d controller::DOBRW(Vector2d DOB_output ,Matrix2d Lamda_nominal_DOB,doubl
 {
     //DOB_output이 한 step 이전 값이다. 그래서 여기 안에서 setting 안해줘도됨
     // old 값 initial 0으로 해줘야함
+    // UI에 넣어야할 내용은 cut_off, flag
+
     DOBinitial();
     double time_const = 1 / (2 * pi * cut_off);
     double Ts = 0.001;  
@@ -197,6 +199,50 @@ Vector2d controller::DOBRW(Vector2d DOB_output ,Matrix2d Lamda_nominal_DOB,doubl
 
 }; // Rotating Workspace DOB
 
+void controller::FOBRW(Vector2d DOB_output,Matrix2d Lamda_nominal_FOB,Matrix2d JacobianTrans,double acc_m,double acc_b ,double cut_off ,int flag)
+{
+    //DOB_output이 한 step 이전 값이다. 그래서 여기 안에서 setting 안해줘도됨
+    // old 값 initial 0으로 해줘야함
+    // UI에 넣어야할 내용은 cut_off, flag
+    // Jacobian도 가져와야함
+    FOBinitial();
+    
+    double time_const = 1 / (2 * pi * cut_off);
+    double Ts = 0.001;  
+
+    // 정의는 여기서
+    Vector2d result;
+
+    Vector2d qddot;
+    qddot[0] = acc_m;
+    qddot[1] = acc_b;
+
+    lhs_dob = DOB_output;
+    rhs_dob = Lamda_nominal_FOB * qddot;
+    T_fob[0] = lhs_dob[0] - rhs_dob[0];
+    
+    // 현재값 계산
+    if (flag == true)
+    {
+      tauExt_hat[0] = (2 * (T_fob[0] + T_fob[1]) - (Ts - 2 * time_const) * tauExt_hat[1]) / (Ts + 2 * time_const);
+    }
+    else
+    {
+      tauExt_hat[0] = 0;
+    }
+
+    forceExt_hat[0] = JacobianTrans * tauExt_hat[0];
+    
+    //old값 update
+    T_fob[1] = T_fob[0];
+    tauExt_hat[1] = tauExt_hat[0];
+    forceExt_hat[2] = forceExt_hat[1];
+    forceExt_hat[1] = forceExt_hat[0];
+    
+
+}; // Rotating Workspace DOB
+
+
 
 /*-----------------------Initial function-------------------------*/
 void controller::DOBinitial()
@@ -206,4 +252,12 @@ void controller::DOBinitial()
     T_dob[i][1] = 0;
     tauDist_hat[i][1] = 0;
   }
+}
+
+void controller::FOBinitial()
+{ //Old값 초기화
+  T_fob[1] = 0;
+  tauExt_hat[1] = 0;
+  forceExt_hat[1] = 0;
+  forceExt_hat[2] = 0;
 }

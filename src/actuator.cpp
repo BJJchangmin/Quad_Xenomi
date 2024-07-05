@@ -5,19 +5,17 @@ using namespace std;
 
 Actuator::Actuator(int Motor_num, double motor_init_pos) {
   Motor_Num = Motor_num;
-  Motor_pos = motor_init_pos;
+  Motor_pos[0] = motor_init_pos;
+  Motor_pos[1] = 0; // old값 초기화
   
-  Motor_initial_pos = motor_init_pos;
-}
+  Motor_vel[1] = 0; // old값 초기화
+  Motor_acc[1] = 0;
 
-void Actuator::DATA_reset() //
-{
-  for (int i = 0; i < NUMOFSLAVES; i++) //[i][0] = z^0, [i][1] = z^1.  2x1으로 1x1은 현재 값, 2x1은 이전 값인데 그값 초기화
-  {
-    Motor_pos = 0;
-    Motor_vel = 0;
-    Motor_torque = 0;
-  }
+  
+
+
+  Motor_initial_pos = motor_init_pos;
+
 }
 
 void Actuator::DATA_Receive(input_GTWI_t** in_twitter_GTWI) //Motor_num은 class를 선언할 때 Ethercat 통신 순서대로 이미 정해줌
@@ -35,6 +33,8 @@ void Actuator::DATA_Receive(input_GTWI_t** in_twitter_GTWI) //Motor_num은 class
     modeofOP_disp = in_twitter_GTWI[Motor_Num]->TXPDO_MODE_OF_OPERATION_DISPLAY_DATA;
     
     DATA_unit_change();
+    acc_cal(150);
+    setDelayData();
 
 #endif
 
@@ -66,30 +66,45 @@ void Actuator::DATA_Send(output_GTWI_t** out_twitter_GTWI) //
 #endif
 }
 // input current = 1000000/(45000*gear_ratio*torque_constant)
+
 void Actuator::DATA_unit_change() {
 
 
   if(Motor_Num == 2||Motor_Num == 10||Motor_Num == 11)
   {
-    Motor_pos = -(double)(position_raw / Enc_resolution * 2 * M_PI) /100;
-    Motor_vel = -(double)(velocity_raw / Enc_resolution * 2 * M_PI) /100;
+    Motor_pos[0] = -(double)(position_raw / Enc_resolution * 2 * M_PI) /100;
+    Motor_vel[0] = -(double)(velocity_raw / Enc_resolution * 2 * M_PI) /100;
   }
   else
   {
-    Motor_pos = (double)(position_raw / Enc_resolution * 2 * M_PI) /100;
-    Motor_vel = (double)(velocity_raw / Enc_resolution * 2 * M_PI) /100;
+    Motor_pos[0] = (double)(position_raw / Enc_resolution * 2 * M_PI) /100;
+    Motor_vel[0] = (double)(velocity_raw / Enc_resolution * 2 * M_PI) /100;
   } 
 
     if(Enc_init == true)
     {
-      Motor_pos_offset = Motor_pos - Motor_initial_pos;
+      Motor_pos_offset = Motor_pos[0] - Motor_initial_pos;
     } 
 
-    Motor_pos = Motor_pos - Motor_pos_offset;
+    Motor_pos[0] = Motor_pos[0] - Motor_pos_offset;
   
     // Motor_vel = (double)(velocity_raw / Enc_resolution * 2 * M_PI) /100;
     Motor_torque = (double)((double)torque_raw) * 45000 / 1000000;    
         
+}
+
+void Actuator::acc_cal(double cutoff_freq) {
+  double time_const = 1 / (2 * pi * cutoff_freq);
+  double Ts = 0.0001;
+
+  Motor_acc[0] = (2 * (Motor_vel[0] - Motor_vel[1]) - 
+                      (Ts - 2 * time_const) * Motor_acc[1]) / (Ts + 2 * time_const);
+}
+
+void Actuator::setDelayData() {
+  Motor_pos[1] = Motor_pos[0];
+  Motor_vel[1] = Motor_vel[0];
+  Motor_acc[1] = Motor_acc[0];
 }
 
 void Actuator::exchange_mutex() {
@@ -99,7 +114,7 @@ void Actuator::exchange_mutex() {
     modeOP = _M_MODE_OF_OPERATION[Motor_Num];
     target_torque = _M_motor_torque[Motor_Num];
     
-    _M_motor_position[Motor_Num] = Motor_pos;
+    _M_motor_position[Motor_Num] = Motor_pos[0];
     _M_actual_current[Motor_Num] = Motor_torque;
     
     //cout << Motor_Num << ": " << Motor_pos << endl;

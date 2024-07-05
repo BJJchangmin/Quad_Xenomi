@@ -143,31 +143,67 @@ double Controller::get_velD_cutoff(int Leg_num, int r0th1) {
     return RW_th_velD_cutoff[Leg_num];
 };
 
-Vector2d controller::DOBRW(Vector2d PID_Torque,Matrix2d Lamda_nominal_DOB,double acc_m,double acc_b ,double cut_off ,int flag)
+Vector2d controller::DOBRW(Vector2d DOB_output ,Matrix2d Lamda_nominal_DOB,double acc_m,double acc_b ,double cut_off ,int flag)
 {
-    cut_off_dob = cut_off;
+    //DOB_output이 한 step 이전 값이다. 그래서 여기 안에서 setting 안해줘도됨
+    // old 값 initial 0으로 해줘야함
+    DOBinitial();
+    double time_const = 1 / (2 * pi * cut_off);
+    double Ts = 0.001;  
+
+    // 정의는 여기서
+    Vector2d result;
+
     Vector2d qddot;
-    PID_output[0]= PID_Torque;
-    double time_const = 1 / (2 * pi * cutoff_freq);
     qddot[0] = acc_m;
     qddot[1] = acc_b;
 
-    lhs_dob = PID_output[1];
-    PID_output[1] = PID_output[0];
+    lhs_dob = DOB_output;
     rhs_dob = Lamda_nominal_DOB * qddot;
-    T_dob = lhs_dob - rhs_dob;
+    
+    // 현재값 계산
+    for(int i = 0; i < 2; i++)
+    {
+      T_dob[i][0] = lhs_dob[i] - rhs_dob[i];
+    }
 
     if (flag == true)
     {
-      tauDist_hat[0] = (2 * (T_dob[0] + T_dob[1]) - (Ts - 2 * time_const) * tauDist_hat[1]) / (Ts + 2 * time_const);
+      for(int i = 0; i < 2; i++)
+      {
+        tauDist_hat[i][0] = (2 * (T_dob[i][0] + T_dob[i][1]) - (Ts - 2 * time_const) * tauDist_hat[i][1]) / (Ts + 2 * time_const);
+      }
     }
     else
     {
-      tauDist_hat[0] = 0;
+      for(int i = 0; i < 2; i++)
+      {
+        tauDist_hat[i][0] = 0;
+      }
     }
     
-    tauDist_hat[1] = tauDist_hat[0];
-    return tauDist_hat[0];
+    //old값 update
+    for(int i = 0; i < 2; i++)
+    {
+      T_dob[i][1] = T_dob[i][0];
+      tauDist_hat[i][1] = tauDist_hat[i][0];
+    }
+
+    result[0] = tauDist_hat[0][0];
+    result[1] = tauDist_hat[1][0];
+    
+
+    return result;
 
 }; // Rotating Workspace DOB
-  
+
+
+/*-----------------------Initial function-------------------------*/
+void controller::DOBinitial()
+{ //Old값 초기화
+  for(int i = 0; i < 2; i++)
+  {
+    T_dob[i][1] = 0;
+    tauDist_hat[i][1] = 0;
+  }
+}
